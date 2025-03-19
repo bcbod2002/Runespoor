@@ -13,10 +13,10 @@ import Logging
 @main
 struct App: AsyncParsableCommand, AppArguments {
     @Option(name: .shortAndLong)
-    var hostname: String = "127.0.0.1"
+    var hostname: String = ProcessInfo.processInfo.environment["VERCEL"] != nil ? "0.0.0.0" : "127.0.0.1"
 
     @Option(name: .shortAndLong)
-    var port: Int = 8080
+    var port: Int = ProcessInfo.processInfo.environment["PORT"].flatMap(Int.init) ?? 8080
 
     @Option(name: .shortAndLong)
     var logLevel: Logger.Level?
@@ -25,9 +25,30 @@ struct App: AsyncParsableCommand, AppArguments {
     var inMemoryTesting: Bool = false
 
     func run() async throws {
-        let configuration = ApplicationConfiguration(address: .hostname(hostname, port: port), serverName: "Niffler")
         let app = try await AppBuilder.buildApplication(self)
-        try await app.runService()
+        
+        if ProcessInfo.processInfo.environment["VERCEL"] != nil {
+            // Running on Vercel - output JSON response to stdout
+            handleVercelResponse()
+        } else {
+            // Running locally as a normal server
+            try await app.runService()
+        }
+    }
+    
+    // Handle Vercel serverless environment
+    private func handleVercelResponse() {
+        // Simple JSON response for Vercel
+        let responseJSON = """
+        {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "{\\"message\\":\\"Hello from Runespoor on Vercel\\"}"
+        }
+        """
+        print(responseJSON)
     }
 }
 

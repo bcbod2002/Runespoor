@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "swift build --product runespoor -c release",
+  "outputDirectory": ".vercel/output",
+  "functions": {
+    "api/**/*.js": {
+      "memory": 512,
+      "maxDuration": 10
+    }
+  },
+  "regions": ["iad1"]
+}
